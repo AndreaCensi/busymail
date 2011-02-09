@@ -1,0 +1,4 @@
+figures
+logs
+*pyc
+*.egg-info
