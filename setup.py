@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='BusyMail',
-	  version="0.2",
+	  version="0.3",
 	  license="GPL",
       package_dir={'':'src'},
       packages=['busymail'],

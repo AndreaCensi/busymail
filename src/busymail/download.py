@@ -51,6 +51,7 @@ def main():
     def check(x):
         if getattr(options, x) is None:
             print('Please provide %r on the command line.' % x)
+            sys.exit(1)
             
     check('hostname')
     check('username')

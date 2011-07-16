@@ -7,6 +7,8 @@ from datetime import datetime, timedelta
 from dateutil import parser
 from optparse import OptionParser
 from .utils import find_files, datetime2timestamp, percentile, seconds2days
+from .disk_caching import disk_cache
+from .stats import compute_stats
 
 MESSAGE_ID = 'Message-Id'
 SNAPSHOT_IDS = 'ids'
@@ -28,86 +30,29 @@ def main():
 
     busyplot(options.storage, options.output)
     
-def busyplot(logdir, output, max_age=timedelta(30)):
+def busyplot(logdir, output):
     # Load everything
-    snapshots = read_snapshot_dir(logdir)
-    
-    # Compute the stats (np array)
-    stats = compute_stats(snapshots, max_age=max_age)
-    
+    stats = []
+    for f in find_files(logdir, '*.yaml'):
+        f_stats = compute_stats_file(f)
+        stats.append(f_stats)
+
+    stats = np.hstack(stats)
+#    print(stats.dtype, stats.shape)
+
     # Plot
     if not os.path.exists(output):
         os.makedirs(output)
     plot_stats(output, stats)
 
-def disk_cache(func):
-    # Processes a file or directory, caching results 
-    # Assumes that the wrapped function has only one arg (for simplicity).
-    def wrapper(filename):
-        if os.path.isdir(filename):
-            cache = os.path.join(filename, '%s.pickle' % func.__name__)
-        else:
-            cache = os.path.splitext(filename)[0] + '.%s.pickle' % func.__name__
-        if (os.path.exists(cache) and
-            (os.path.getmtime(cache) > os.path.getmtime(filename))):
-            # print('Using cache %r' % cache)
-            return pickle.load(open(cache,'rb'))
-        else:
-            # print('Creating cache %r' % cache)
-            result = func(filename)
-            with open(cache, 'wb') as f:
-                pickle.dump(result, f)
-            return result
-    return wrapper
 
 @disk_cache    
-def read_snapshot_dir(logdir):
-        # Read all yaml files inside logdir
-    snapshots = [ read_snapshot(f) for f in find_files(logdir, '*.yaml')]
-
-    # print('Loaded %d snapshots' % len(snapshots))
-
-    # Sort by Date
-    snapshots.sort(key=lambda x: x['Date'])
-
-    return snapshots
-
-@disk_cache
-def read_snapshot(filename):
-    return yaml.load(open(filename))
+def compute_stats_file(filename):
+    snapshot = yaml.load(open(filename))
+    max_age=timedelta(30)
+    return compute_stats(snapshot, max_age)
     
-
-def compute_stats(snapshots, max_age):
-    stats = np.zeros((len(snapshots)),
-                                [('timestamp','double'),
-                                ('median_age','double'),
-                                ('mean_age','double'),
-                                ('count','int')])
-    for i, snapshot in enumerate(snapshots):            
-        snapshot_date = snapshot['Date']
-        messages = snapshot['Messages']
-        
-        
-        # parse the "Date" field from string -> datetime object
-        for m in messages:
-            m['Date'] = parser.parse(m['Date']).replace(tzinfo=None)
-        
-        valid_messages = [m for m in messages if snapshot_date-m['Date']<max_age]
-
-        # print('Snapshot %s: %d messages, %d valid' % 
-                # (snapshot_date, len(messages), len(valid_messages)))
-
-        snapshot_timestamp = datetime2timestamp(snapshot_date)
-        messages_timestamps = np.array([datetime2timestamp(m['Date']) 
-                                        for m in valid_messages ])
-        messages_ages = snapshot_timestamp - messages_timestamps 
-        
-        stats[i]['timestamp'] = datetime2timestamp(snapshot_date)
-        stats[i]['count'] = len(valid_messages)
-        stats[i]['median_age'] = percentile(messages_ages, 0.5)
-        stats[i]['mean_age'] = np.mean(messages_ages)
-
-    return stats
+    
     
 def set_axis_lastweek():
     pylab.xlabel('time (days)')
