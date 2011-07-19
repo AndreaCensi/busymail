@@ -37,9 +37,8 @@ def busyplot(logdir, output):
         f_stats = compute_stats_file(f)
         stats.append(f_stats)
 
-    stats = np.hstack(stats)
-#    print(stats.dtype, stats.shape)
-
+    stats = np.hstack(stats) 
+    
     # Plot
     if not os.path.exists(output):
         os.makedirs(output)
@@ -113,7 +112,8 @@ def plot_stats(output, stats):
     pylab.savefig(os.path.join(output, 'meanage.png'))
 
     options = locals()
-    plots = [stress_complete, procrastination_complete, meanage_complete]
+    plots = [stress_complete, procrastination_complete, meanage_complete,
+            procrastination_complete_both ]
     for plot in plots:
         # print('Plotting %s' % plot.__name__)
         plot(stats, options)
@@ -153,6 +153,21 @@ def meanage_complete(stats, options):
     pylab.plot(x, y,'-')
     pylab.title('Procrastination')
     pylab.ylabel('mean age (days)')
+    set_axis_0()
+
+
+def procrastination_complete_both(stats, options):
+    ratio = 10; height=2.5
+    pylab.figure(figsize=(ratio*height,height))
+    right_now = time.time()
+    x = seconds2days(stats['timestamp']-right_now)
+    median = seconds2days(stats['median_age'])
+    mean = seconds2days(stats['mean_age'])
+    pylab.plot(x, median,'k-', label='median')
+    pylab.plot(x, mean,'b-', label='mean')
+    pylab.title('Procrastination')
+    pylab.ylabel('age (days)')
+    pylab.legend(loc='upper left')
     set_axis_0()
 
 
