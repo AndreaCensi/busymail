@@ -9,7 +9,7 @@ def compute_stats(snapshot, max_age):
      
     # parse the "Date" field from string -> datetime object
     for m in messages:
-        m['Date'] = parser.parse(m['Date']).replace(tzinfo=None)
+        m['Date'] = parser.parse(m['Date'], fuzzy=True).replace(tzinfo=None)
     
     valid_messages = [m for m in messages if snapshot_date-m['Date']<max_age]
 
