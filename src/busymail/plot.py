@@ -75,12 +75,13 @@ def plot_stats(output, stats):
 
     right_now = time.time()
     
+    how=dict(markersize=2)
     z = 0.7;
     figsize=(4*z,3*z)
     pylab.figure(figsize=figsize)
     x = seconds2days(stats['timestamp']-right_now)
     y = stats['count']
-    pylab.plot(x, y,'-')
+    pylab.plot(x, y,'k-', **how)
     y_avg = percentile(y, 0.5)
     pylab.plot(x, y_avg * np.ones(y.shape),'k--')
     pylab.ylabel('flagged messages')
@@ -91,7 +92,7 @@ def plot_stats(output, stats):
     pylab.figure(figsize=figsize)
     x = seconds2days(stats['timestamp']-right_now)
     y = seconds2days(stats['median_age'])
-    pylab.plot(x, y,'-')
+    pylab.plot(x, y,'k-', **how)
     y_avg = percentile(y, 0.5)
     pylab.plot(x, y_avg * np.ones(y.shape),'k--')
     pylab.title('Procrastination')
@@ -103,7 +104,7 @@ def plot_stats(output, stats):
     pylab.figure(figsize=figsize)
     x = seconds2days(stats['timestamp']-right_now)
     y = seconds2days(stats['mean_age'])
-    pylab.plot(x, y,'-')
+    pylab.plot(x, y,'k-', **how)
     y_avg = percentile(y, 0.5)
     pylab.plot(x, y_avg * np.ones(y.shape),'k--')
     pylab.title('Procrastination')
