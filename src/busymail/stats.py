@@ -1,7 +1,7 @@
 from dateutil import parser
 import numpy as np
 from .utils import find_files, datetime2timestamp, percentile, seconds2days
-
+import datetime
 
 def compute_stats(snapshot, max_age):
     snapshot_date = snapshot['Date']
@@ -9,9 +9,14 @@ def compute_stats(snapshot, max_age):
      
     # parse the "Date" field from string -> datetime object
     for m in messages:
-        m['Date'] = parser.parse(m['Date'], fuzzy=True).replace(tzinfo=None)
+        try:
+            if not isinstance(m['Date'], datetime.datetime):
+                m['Date'] = parser.parse(m['Date'], fuzzy=True).replace(tzinfo=None)
+        except:
+            print('Cannot parse date: %r' % m['Date'])
+            raise
     
-    valid_messages = [m for m in messages if snapshot_date-m['Date']<max_age]
+    valid_messages = [m for m in messages if m['Date'] is not None and snapshot_date-m['Date']<max_age]
 
     # print('Snapshot %s: %d messages, %d valid' % 
     #   (snapshot_date, len(messages), len(valid_messages)))
